@@ -1,10 +1,12 @@
 #pragma once
 #include <cmath>
+#include "types.h"
 
 class Camera {
 public:
     Camera() :
         angle(M_PI + M_PI / 2),
+        fl(250.0f),
         thrust(0.0f),
         vr(0.0f),
         vx(0.0f),
@@ -15,6 +17,8 @@ public:
         z(0.0f),
         _halfWidth(250.0f) {
     }
+
+    TransformedPoint transform(const Point3D& p) const;
 
     void update() {
         angle += vr;
@@ -47,7 +51,24 @@ public:
         return {x + std::cos(angle - M_PI / 2) * _halfWidth, z + std::sin(angle - M_PI / 2) * _halfWidth};
     }
 
-    // Public fields (match JS style for easy access)
+    ProjectedPoint project(const TransformedPoint& p, float vpX, float vpY) const {
+        ProjectedPoint result{};
+
+        if (!p.valid) {
+            result.valid = false;
+            return result;
+        }
+
+        float scale = fl / (fl + p.z);
+        result.x2d = vpX + p.x * scale;
+        result.y2d = vpY + (p.y + y) * scale;
+        result.scale = scale;
+        result.valid = true;
+
+        return result;
+    }
+
+    float fl;
     float angle;
     float thrust;
     float vr; // rotational velocity
