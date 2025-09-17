@@ -20,13 +20,14 @@ public:
 
     TransformedPoint transform(const Point3D& p) const;
 
-    void update() {
-        angle += vr;
+    void update(float dt) {
+        angle += vr * dt;
 
+        // acceleration from thrust
         float ax = std::cos(angle) * thrust;
         float az = std::sin(angle) * thrust;
-        vx += ax;
-        vz += az;
+        vx += ax * dt;
+        vz += az * dt;
 
         if (std::fabs(vx) > 0.99f) {
             vx *= 0.98f;
@@ -37,6 +38,7 @@ public:
             z += vz;
         }
         y += vy;
+        y += vy * dt;
     }
 
     struct Point {

@@ -1,0 +1,64 @@
+#include "lilspace.h"
+#include "camera.h"
+#include "cameracontrols.h"
+
+LilSpaceApp::LilSpaceApp() : App("LilSpace") {
+}
+
+void LilSpaceApp::run() {
+    float vpX = canvas->width() / 2;
+    float vpY = canvas->height() / 2;
+
+    uint64_t prevRenderTime = millis();
+    uint64_t startTime = millis();
+
+    Camera camera;
+
+    const int gridSize = 30;
+    const float cellStep = 500.0f;
+
+    while (1) {
+        lilka::State state = lilka::controller.getState();
+        handleCameraMovement(camera, state);
+        if (state.start.justPressed) return;
+
+        canvas->fillScreen(lilka::colors::Black);
+
+        // Draw grid on XZ-plane (y = 0)
+        for (int i = 0; i <= gridSize; i++) {
+            float offset = i * cellStep;
+
+            // Line along X (constant Z)
+            Point3D p1 = {0, 1000, offset};
+            Point3D p2 = {gridSize * cellStep, 1000, offset};
+            TransformedPoint tp1 = camera.transform(p1);
+            TransformedPoint tp2 = camera.transform(p2);
+            ProjectedPoint sp1 = camera.project(tp1, vpX, vpY);
+            ProjectedPoint sp2 = camera.project(tp2, vpX, vpY);
+            
+            if (sp1.valid && sp2.valid) {
+                canvas->drawLine(sp1.x2d, sp1.y2d, sp2.x2d, sp2.y2d, lilka::colors::White);
+            }
+
+            // Line along Z (constant X)
+            p1 = {offset, 1000, 0};
+            p2 = {offset, 1000, gridSize * cellStep};
+            tp1 = camera.transform(p1);
+            tp2 = camera.transform(p2);
+            sp1 = camera.project(tp1, vpX, vpY);
+            sp2 = camera.project(tp2, vpX, vpY);
+            if (sp1.valid && sp2.valid) {
+                canvas->drawLine(sp1.x2d, sp1.y2d, sp2.x2d, sp2.y2d, lilka::colors::White);
+            }
+        }
+
+        canvas->setCursor(2, 20);
+        canvas->println("FPS: " + String(1000 / (millis() - prevRenderTime)));
+
+        camera.update();
+
+        prevRenderTime = millis();
+
+        queueDraw();
+    }
+}
